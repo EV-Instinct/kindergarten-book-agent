@@ -302,63 +302,6 @@ def _on_child_submit() -> None:
     push_chat(text, ask_agent(text))
 
 
-def render_child_view():
-    # 顶部品牌条与隐形教师通道
-    render_flash()
-    render_brand_header()
-
-    col_dummy, col_teacher_btn = st.columns([8.5, 1.5])
-    with col_teacher_btn:
-        if st.button("🔒 教师通道", help="点击打开教师管理后台", width="stretch"):
-            teacher_auth_dialog()
-
-    # 1. 🗣️ 语音对话区（对话气泡 + 文字输入框 + 麦克风 + 清空）
-    #    注意：不能用 st.markdown('<div>...') 去"包住"后续组件——Streamlit 会把块级
-    #    HTML 提取成独立空 div，气泡和输入框都变成它的兄弟节点，样式框不住内容。
-    #    正解是 st.container(border=True) + 内部标记元素，再用 :has() 精确上色。
-    inject_chat_css()
-    with st.container(border=True):
-        st.markdown(
-            '<div class="kid-chat-title">🦄 和图书小精灵皮皮聊天</div>',
-            unsafe_allow_html=True,
-        )
-        render_chat_history(st.session_state.chat_messages)
-        # 文字输入框放在气泡正下方——Streamlit 的 st.chat_input 会固定在页面最底部，
-        # 幼儿看不到「这里可以打字」，所以改成内联输入框 + 发送按钮。
-        # 用 st.form(clear_on_submit=True) 提交并自动清空：
-        # 不能在同一个 run 里给已实例化的 widget 赋 session_state（会抛
-        # StreamlitWidgetAlreadyInstantiatedError，页面直接崩）。
-        with st.form("kid_chat_form", clear_on_submit=True):
-            typed = st.text_input(
-                "在这里打字问皮皮…",
-                key="child_typed_input",
-                placeholder="想看什么书？直接打出来～",
-                label_visibility="collapsed",
-            )
-            c_send, c_hint = st.columns([1, 3])
-            with c_send:
-                st.form_submit_button("📤 发送", type="primary", width="stretch",
-                                      on_click=_on_child_submit)
-            with c_hint:
-                st.markdown(
-                    "<div style='font-size:.85rem;color:#8A5A2B;padding-top:10px;'>"
-                    "也可以按住下面的红色麦克风直接说话哦～</div>",
-                    unsafe_allow_html=True,
-                )
-
-    # 2. 云端语音播报（百炼 Qwen3-TTS，Cherry 音色）
-    #
-    #    ⚠ 这里**不能**再用 st.markdown 手写 <audio>/<script>：
-    #    Streamlit 内部用 React 管理 DOM，裸 HTML 节点不受它管辖；
-    #    每次 rerun 时 React 去删除这个"不认识却存在"的节点就会抛
-    #    "未能移除错误：未能在节点 removeChild 上执行"，整块 UI 崩红。
-    #    现在统一用 Streamlit 自己的 st.audio，节点由 React 正常托管。
-    #
-    #    合成是异步的（实测要 4.35s），所以这里先渲染状态占位，
-    #    由下面的 fragment 每秒轮询，音频就绪后再挂播放器。
-    render_audio_area()
-
-
 def render_audio_area() -> None:
     """
     语音区。
@@ -391,10 +334,6 @@ def render_audio_area() -> None:
             '</span></div>',
             unsafe_allow_html=True,
         )
-        # 播放器必须用 st.audio：手写 <audio>/<script> 是裸 DOM 节点，
-        # 不受 Streamlit 内部 React 管理，rerun 时 React 删不到它就抛
-        # "未能移除错误：未能在节点 removeChild 上执行"，整块 UI 崩红。
-        # 注意 st.audio 没有 key 参数（1.65 签名里不存在），别乱传。
         st.audio(audio, format=fmt or "audio/wav", autoplay=True)
         st.caption("没听到声音？点一下上面的播放键 ▶️")
         return
@@ -405,16 +344,6 @@ def render_audio_area() -> None:
             st.warning("☁️ 云端语音暂时不可用，可以稍后再试，或者找老师帮忙哦。")
         return
 
-    # pending：显示占位 + 「听一听」按钮。
-    #
-    # 关于"自动出现"：试过三条路都不通，如实记录以免后人重蹈
-    #   1) st.fragment(run_every=...)  —— 本页定时器不推进（禁用麦克风 iframe 后依旧）；
-    #   2) fragment 内 st.rerun(scope="fragment") —— 首帧不在 fragment 重跑上下文，抛
-    #      StreamlitInvalidLayoutContextError；
-    #   3) components.html 注入 JS 自动点按钮 —— 脚本在**沙箱 iframe** 里，
-    #      访问不到父页面 DOM，跨域被拦。
-    # 所以改为：按钮兜底 + 机会式挂载 —— 用户点「听一听」，或下一次任意交互
-    # （点封面/切导航/再问一句）都会 rerun，那时音频已就绪会自动挂上播放器。
     waited = time.time() - st.session_state.get("tts_started_at", time.time())
     tip = "马上就好～" if waited < 3 else "点「听一听」就能听到啦"
     c_wait, c_btn = st.columns([3, 1])
@@ -431,6 +360,46 @@ def render_audio_area() -> None:
     with c_btn:
         if st.button("🔊 听一听", key=f"tts_retry_{seq}", width="stretch"):
             st.rerun()
+
+
+def render_child_view():
+    # 顶部品牌条与隐形教师通道
+    render_flash()
+    render_brand_header()
+
+    col_dummy, col_teacher_btn = st.columns([8.5, 1.5])
+    with col_teacher_btn:
+        if st.button("🔒 教师通道", help="点击打开教师管理后台", width="stretch"):
+            teacher_auth_dialog()
+
+    # 1. 🗣️ 语音对话区（对话气泡 + 文字输入框 + 麦克风 + 清空）
+    inject_chat_css()
+    with st.container(border=True):
+        st.markdown(
+            '<div class="kid-chat-title">🦄 和图书小精灵皮皮聊天</div>',
+            unsafe_allow_html=True,
+        )
+        render_chat_history(st.session_state.chat_messages)
+        with st.form("kid_chat_form", clear_on_submit=True):
+            typed = st.text_input(
+                "在这里打字问皮皮…",
+                key="child_typed_input",
+                placeholder="想看什么书？直接打出来～",
+                label_visibility="collapsed",
+            )
+            c_send, c_hint = st.columns([1, 3])
+            with c_send:
+                st.form_submit_button("📤 发送", type="primary", width="stretch",
+                                      on_click=_on_child_submit)
+            with c_hint:
+                st.markdown(
+                    "<div style='font-size:.85rem;color:#8A5A2B;padding-top:10px;'>"
+                    "也可以按住下面的红色麦克风直接说话哦～</div>",
+                    unsafe_allow_html=True,
+                )
+
+    # 2. 云端语音播报（百炼 Qwen3-TTS，Cherry 音色）
+    render_audio_area()
 
     # 麦克风语音输入 + 清空按钮（与对话框同一数据流）
     with st.container(border=True):
@@ -519,7 +488,6 @@ def render_audio_area() -> None:
             with c_kw_btn:
                 st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
                 if st.button("🔍 搜索", key="btn_kw_search", width="stretch"):
-                    # 显式搜索触发：保证在各类浏览器/触控设备上都能可靠生效
                     st.session_state.child_search_kw = (kw or "").strip()
             st.session_state.child_search_kw = (kw or "").strip()
 
@@ -555,7 +523,6 @@ def render_audio_area() -> None:
                     action_key=f"find_book_{book['id']}"
                 )
                 if clicked:
-                    # 先点亮书架层位（确定性事实），再生成台词，避免等待 AI 影响反馈速度
                     st.session_state.highlight_row = book["shelf_tier"]
                     q = f"我想看《{book['title']}》，请问它在第几层呀？"
                     push_chat(q, ask_agent(q))
@@ -622,6 +589,7 @@ def render_audio_area() -> None:
                     st.session_state.chat_messages.append({"role": "assistant", "content": _like_msg})
                     speak_out(_like_msg)
                     st.rerun()
+
 
 
 # ========================================================

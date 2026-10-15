@@ -1,0 +1,23 @@
+# ===== 安全：密钥绝不入库 =====
+.streamlit/secrets.toml
+.env
+
+# ===== Python =====
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ===== 本地数据（首次运行自动从 Excel 种子生成） =====
+data/*.db
+data/*.xlsx
+!data/.gitkeep
+
+# ===== 临时测试文件与开发产物 =====
+temp_check/
+*.log
+.workbuddy/
+temp_sharp_01.png
+test_cloud_voice.mp3
+test_gtts.mp3

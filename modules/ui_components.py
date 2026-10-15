@@ -588,23 +588,56 @@ def render_mascot_island(message: str, active_ai: str = "GEMINI", ai_online: boo
 # ============================================================
 # 组件：绘本画廊卡片（找书 / 点赞复用）
 # ============================================================
+import base64
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def _load_cover_as_data_url(file_path_str: str) -> str:
+    """内部带缓存的读取并生成 data:image/png;base64,... 字符串"""
+    try:
+        p = Path(file_path_str)
+        if not p.is_file():
+            return ""
+        suffix = p.suffix.lower().lstrip(".")
+        mime = "jpeg" if suffix in ("jpg", "jpeg") else "png"
+        raw = p.read_bytes()
+        if not raw:
+            return ""
+        b64_str = base64.b64encode(raw).decode("utf-8")
+        return f"data:image/{mime};base64,{b64_str}"
+    except Exception:
+        return ""
+
+
 def cover_to_url(cover_path: str) -> str:
     """
-    把本地封面路径转换为 Streamlit 静态服务 URL（/app/static/...）。
-    仅 static/ 目录下且真实存在的文件可被服务；其余情况返回空串，由调用方走拟态占位。
+    将图书封面路径转换为可内嵌的 Data URL（base64）。
+    无论在本地 Windows 还是 Streamlit Cloud (Linux) 容器内，
+    均可 100% 可靠加载，不受静态资源路由或跨平台路径影响。
     """
     if not cover_path:
         return ""
+    
+    # 1. 尝试直接以传入路径寻找
+    p = Path(cover_path)
+    if p.is_file():
+        return _load_cover_as_data_url(str(p.resolve()))
+    
+    # 2. 尝试从 BASE_DIR 相对拼接寻找
     try:
-        p = Path(cover_path)
-        if not p.is_absolute() or not p.exists():
-            return ""
-        rel = p.resolve().relative_to(BASE_DIR.resolve())
-        parts = rel.parts
-        if parts and parts[0] == "static":
-            return "/app/" + "/".join(parts)
+        p_rel = (BASE_DIR / cover_path).resolve()
+        if p_rel.is_file():
+            return _load_cover_as_data_url(str(p_rel))
     except Exception:
         pass
+
+    # 3. 容错回退：无论路径前缀如何，只要文件名存在于 static/book_covers/ 下即能命中
+    filename = p.name
+    if filename:
+        p_fallback = (BASE_DIR / "static" / "book_covers" / filename).resolve()
+        if p_fallback.is_file():
+            return _load_cover_as_data_url(str(p_fallback))
+
     return ""
 
 

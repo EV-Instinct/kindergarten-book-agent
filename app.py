@@ -36,10 +36,13 @@ from config.settings import (
     get_secret,
 )
 from modules.db_manager import DatabaseManager
+import importlib
+import modules.ui_components
+importlib.reload(modules.ui_components)
+
 from modules.ui_components import (
     inject_kindergarten_css,
     inject_chat_css,
-    render_brand_header,
     render_mascot_island,
     render_book_card,
     render_chat_history,
@@ -360,6 +363,19 @@ def render_audio_area() -> None:
     with c_btn:
         if st.button("🔊 听一听", key=f"tts_retry_{seq}", width="stretch"):
             st.rerun()
+
+
+def render_brand_header(subtitle: str = "轻轻一触 · 自主找书 · 快乐归位"):
+    """渲染儿童端顶部品牌条"""
+    st.markdown(f"""
+    <div class="brand-header">
+        <div class="brand-title">
+            <span>🦄 幼儿园 · 智慧图书小精灵</span>
+            <span class="brand-badge">童趣触控版</span>
+        </div>
+        <div class="brand-sub">{html.escape(subtitle)}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def render_child_view():

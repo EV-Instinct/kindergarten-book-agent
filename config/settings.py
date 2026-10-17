@@ -73,12 +73,12 @@ BAILIAN_TTS_URL = get_secret(
     "BAILIAN_TTS_URL",
     "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
 )
-# 默认音色 Cherry（芊悦）：阳光积极、亲切自然小姐姐。实测同段文本 8.08 秒，
+# 默认音色 Cherry（芊悦）：活泼积极、亲切自然小姐姐。实测同段文本 8.08 秒，
 # 是 10 个候选音色里最贴近幼儿老师自然语速的（其余多在 10 秒以上偏慢）。
 BAILIAN_TTS_VOICE = get_secret("BAILIAN_TTS_VOICE", "Cherry")
 # 自动换音色链：当前音色不可用时按顺序回退，保证播报永不断档
 BAILIAN_TTS_VOICE_FALLBACKS = [
-    "Cherry",   # 芊悦：阳光亲切小姐姐（首选）
+    "Cherry",   # 芊悦：温柔亲切小姐姐（首选）
     "Maia",     # 知性温柔女声
     "Mia",      # 泉水般温柔
     "Katerina", # 成熟知性女声

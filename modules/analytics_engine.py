@@ -60,7 +60,7 @@ class AnalyticsEngine:
         """基于真实统计数据生成结构化离线报告"""
         top_line = "、".join(f"《{b['title']}》(借阅{b.get('read_count', 0)}次)" for b in popular_books[:4]) or "数据收集中"
         cold_line = "、".join(f"《{b['title']}》(借阅{b.get('read_count', 0)}次)" for b in dormant_books[:3]) or "暂无严重冷门"
-        return f"""### 📑 阳光班级图书角动态调配与阅读指导建议书
+        return f"""### 📑 班级图书角动态调配与阅读指导建议书
 
 #### 一、 幼儿阅读兴趣热点透视
 根据近期借阅与点赞数据，当前班级幼儿呈现出明显的**【探索求知欲旺盛】**与**【生活幽默故事喜好】**特征。

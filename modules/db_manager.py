@@ -80,7 +80,7 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS students (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
-                    class_name TEXT DEFAULT '阳光大一班',
+                    class_name TEXT DEFAULT '',
                     duty_count INTEGER DEFAULT 0,
                     badges TEXT DEFAULT '阅读小管家',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -507,7 +507,7 @@ class DatabaseManager:
 
         # 标题栏
         ws.merge_cells("A1:K1")
-        title_cell = ws.cell(1, 1, value="阳光幼儿园 · 班级电子图书台账与盘点登记表")
+        title_cell = ws.cell(1, 1, value="幼儿园 · 班级电子图书台账与盘点登记表")
         title_cell.font = title_font
         title_cell.alignment = Alignment(horizontal="center", vertical="center")
         ws.row_dimensions[1].height = 40
@@ -584,7 +584,7 @@ class DatabaseManager:
         return str(full_path)
 
     # ==================== 幼儿名单与值日排班 ====================
-    def add_student(self, name: str, class_name: str = '阳光大一班') -> bool:
+    def add_student(self, name: str, class_name: str = '') -> bool:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
@@ -595,7 +595,7 @@ class DatabaseManager:
             print(f"[db] 添加幼儿失败: {e}")
             return False
 
-    def set_students_batch(self, name_list: List[str], class_name: str = '阳光大一班'):
+    def set_students_batch(self, name_list: List[str], class_name: str = ''):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             for name in name_list:
@@ -968,7 +968,7 @@ class DatabaseManager:
             if cursor.fetchone()[0] == 0:
                 default_students = ["乐乐", "阳阳", "欣欣", "朵朵", "浩浩", "琪琪", "天天", "果果", "安安", "悦悦"]
                 for name in default_students:
-                    cursor.execute("INSERT INTO students (name, class_name) VALUES (?, '阳光大一班')", (name,))
+                    cursor.execute("INSERT INTO students (name, class_name) VALUES (?, '')", (name,))
                 conn.commit()
 
         # 标记播种完成，后续不再重复播种

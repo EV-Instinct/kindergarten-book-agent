@@ -552,7 +552,7 @@ def render_brand_header(subtitle: str = "轻轻一触 · 自主找书 · 快乐�
     st.markdown(f"""
     <div class="brand-header">
         <div class="brand-title">
-            <span>🦄 阳光幼儿园 · 智慧图书小精灵</span>
+            <span>🦄 幼儿园 · 智慧图书小精灵</span>
             <span class="brand-badge">童趣触控版</span>
         </div>
         <div class="brand-sub">{html.escape(subtitle)}</div>

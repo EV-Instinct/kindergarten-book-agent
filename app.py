@@ -61,7 +61,7 @@ from modules.quota_guard import get_quota_guard
 # 页面基础设置
 # ========================================================
 st.set_page_config(
-    page_title="阳光幼儿园 · 智慧图书角",
+    page_title="幼儿园 · 智慧图书角",
     page_icon="🦄",
     layout="wide",
     initial_sidebar_state="collapsed"
